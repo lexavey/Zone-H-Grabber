@@ -9,7 +9,7 @@ import os,base64,math,sys
 from pathlib import Path
 from lxml import etree
 import argparse
- 
+from selenium_stealth import stealth
 parser = argparse.ArgumentParser(description="Zone-H Grabber",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("nick", help="Nickname to scrapped")
@@ -17,6 +17,7 @@ args = parser.parse_args()
 
 SELENIUM_SESSION_FILE = './selenium_session'
 def build_driver():
+    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
     options = webdriver.ChromeOptions()
     options.set_capability("loggingPrefs", {'performance': 'ALL'})
     options.headless = True
@@ -24,6 +25,7 @@ def build_driver():
     options.add_argument("--disable-infobars")
     options.add_argument("--enable-file-cookies")
     options.add_argument("--incognito")
+    options.add_argument(f'user-agent={user_agent}')
 
     if os.path.isfile(SELENIUM_SESSION_FILE):
         session_file = open(SELENIUM_SESSION_FILE)
@@ -63,9 +65,10 @@ def build_driver():
 Path("result").mkdir(parents=True, exist_ok=True)
 
 def parse(s,txt):
+    print('parse : '+s)
     tree = etree.HTML(txt)
     sv=open('result/'+s+'.txt', 'a')
-    for a in tree.xpath('//a[contains(text(),\''+s+'\')]/following::td[6]'):
+    for a in tree.xpath('//a[contains(@href,\'notifier\')]/following::td[6]'):
         sv.write(a.text.strip()+"\n")
         print(a.text.strip())
 
@@ -95,8 +98,14 @@ def scrap(nick):
                 return True
                 pass
         def start():
-            html_source_code = driver.execute_script("return document.body.innerHTML;")
-            ele_captcha = driver.find_element("xpath", '//*[@id=\"cryptogram\"]')
+            try:
+                html_source_code = driver.execute_script("return document.body.innerHTML;")
+                ele_captcha = driver.find_element("xpath", '//*[@id=\"cryptogram\"]')
+            except:
+                print('unknown error, see screenshoot error.png')
+                driver.save_screenshot('error.png')
+                sys.exit(0)
+                pass
             # get the captcha as a base64 string
             img_captcha_base64 = driver.execute_async_script("""
                 var ele = arguments[0], callback = arguments[1];
