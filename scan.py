@@ -5,17 +5,21 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import InvalidSessionIdException
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 import os,base64,math,sys
 from pathlib import Path
 from lxml import etree
 import argparse
-from selenium_stealth import stealth
+from webdriver_manager.chrome import ChromeDriverManager
 parser = argparse.ArgumentParser(description="Zone-H Grabber",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("nick", help="Nickname to scrapped")
 args = parser.parse_args()
 
 SELENIUM_SESSION_FILE = './selenium_session'
+SELENIUM_PORT=9515
+service = Service(executable_path=ChromeDriverManager().install())
+
 def build_driver():
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
     options = webdriver.ChromeOptions()
@@ -26,7 +30,7 @@ def build_driver():
     options.add_argument("--enable-file-cookies")
     options.add_argument("--incognito")
     options.add_argument(f'user-agent={user_agent}')
-
+    options.add_argument("--remote-debugging-port="+str(SELENIUM_PORT))
     if os.path.isfile(SELENIUM_SESSION_FILE):
         session_file = open(SELENIUM_SESSION_FILE)
         session_info = session_file.readlines()
@@ -44,11 +48,7 @@ def build_driver():
         driver.session_id = session_id
         return driver
 
-    # driver = webdriver.Chrome(options=options, port=SELENIUM_PORT)
-    driver = webdriver.Remote(
-      command_executor='http://127.0.0.1:4444/wd/hub',
-      options=options
-    )
+    driver = webdriver.Chrome(options=options, port=SELENIUM_PORT,service=service)
 
     session_file = open(SELENIUM_SESSION_FILE, 'w')
     session_file.writelines([
@@ -132,8 +132,9 @@ def scrap(nick):
             start()
             
         print('Captcha done, scrapping now')
-        exit()
+        # exit()
         pass
+    ele_total_notification = driver.find_element("xpath", '//*[@id="FullPart"]/p/b[1]')
     total_notification = ele_total_notification.text.strip()
     total_page = math.ceil(int("".join(filter(str.isdigit, total_notification)))/25)
     if total_page>=50:
