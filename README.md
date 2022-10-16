@@ -15,3 +15,5 @@ cd "Zone-H-Grabber"
 python3 -m pip install -r requirements.txt
 python3 scan.py chinafans
 ```
+### Screenshoot
+![screenshoot](https://github.com/lexavey/Zone-H-Grabber/raw/main/screenshoot.png)
