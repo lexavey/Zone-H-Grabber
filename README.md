@@ -1,2 +1,4 @@
 # Zone-H-Grabber
-simple
+
+usage : python scan.py nick
+example : python scan.py chinafans
